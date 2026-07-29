@@ -1,0 +1,134 @@
+Script started on Wednesday 22 July 2026 02:29:39 PM IST
+[24bcs059@mepcolinux ex1]$cat pgm1.c
+#include <stdio.h>
+#include <unistd.h>
+int main() {
+   pid_t p2,p3,p4,p5;
+   printf("p1: pID = %d, parent pID = %d\n",getpid(),getppid());
+   p2=fork();
+   if(p2==0) {
+      printf("p2: pID = %d, parent pID = %d\n",getpid(),getppid());
+   }
+   else {
+      p3=fork();
+      if(p3==0) {
+         printf("p3: pID = %d, parent pID = %d\n",getpid(),getppid());
+         p4=fork();
+         if(p4==0) {
+            printf("p4: pID = %d, parent pID = %d\n",getpid(),getppid());
+         }
+         else {
+            p5=fork();
+            if(p5==0) {
+               printf("p5: pID = %d, parent pID = %d\n",getpid(),getppid());
+            }
+         }
+      }
+   }
+   return 0;
+}
+[24bcs059@mepcolinux ex1]$./p1
+p1: pID = 194787, parent pID = 194713
+p2: pID = 194788, parent pID = 194787
+p3: pID = 194789, parent pID = 194787
+p4: pID = 194790, parent pID = 194789
+p5: pID = 194791, parent pID = 1
+
+[24bcs059@mepcolinux ex1]$cat pgm2.c
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+int a[100], n;
+int prime(int num) {
+    int i;
+    if (num < 2)
+        return 0;
+    for (i = 2; i <= num / 2; i++) {
+        if (num % i == 0)
+            return 0;
+    }
+    return 1;
+}
+int main() {
+    printf("Enter the size of the array: ");
+    scanf("%d", &n);
+    printf("Enter the array elements:\n");
+    int i;
+    for (i = 0; i < n; i++) {
+        scanf("%d", &a[i]);
+    }
+    pid_t p;
+    p = fork();
+    if (p == 0) {
+       exit(0);
+    }
+    else {
+       wait(NULL);
+       printf("Prime no. in the array are:\n");
+       for (i = 0; i < n; i++) {
+           if (prime(a[i]))
+               printf("%d ", a[i]);
+        }
+        printf("\n");
+    }
+    return 0;
+}
+[24bcs059@mepcolinux ex1]$./p2
+Enter the size of the array: 5
+Enter the array elements:
+1
+2
+4
+5
+7
+Prime no. in the array are:
+2 5 7 
+[24bcs059@mepcolinux ex1]$cat pgm3.c
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+char str[100];
+int main() {
+    pid_t p2, p3;
+    printf("Enter a String: ");
+    fgets(str, sizeof(str), stdin);
+    p2 = fork();
+    if (p2 == 0) {
+        int i, vowels = 0;
+        for (i = 0; str[i] != '\0'; i++) {
+            if (str[i] == 'a' || str[i] == 'e' ||
+                str[i] == 'i' || str[i] == 'o' ||
+                str[i] == 'u' || str[i] == 'A' ||
+                str[i] == 'E' || str[i] == 'I' ||
+                str[i] == 'O' || str[i] == 'U') {
+                vowels++;
+            }
+        }
+        printf("No. of vowels = %d\n", vowels);
+    }
+    else {
+        p3 = fork();
+        if (p3 == 0) {
+            int i, special = 0;
+            for (i = 0; str[i] != '\0'; i++) {
+                if (!((str[i] >= 'A' && str[i] <= 'Z') ||
+                      (str[i] >= 'a' && str[i] <= 'z') ||
+                      (str[i] >= '0' && str[i] <= '9') ||
+                      str[i] == ' ' || str[i] == '\n')) {
+                    special++;
+                }
+            }
+            printf("No. of special characters = %d\n", special);
+        }
+    }
+    return 0;
+}
+[24bcs059@mepcolinux ex1]$./p3
+Enter a String: Sakthi@123
+No. of vowels = 2
+No. of special characters = 1
+[24bcs059@mepcolinux ex1]$exit
+exit
+
+Script done on Wednesday 22 July 2026 02:30:35 PM IST
