@@ -1,0 +1,333 @@
+Script started on Wednesday 19 August 2026 04:16:28 PM IST
+[24bcs059@mepcolinux ex3]$cat pgm1a.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+
+int main() {
+    int shmid, num, *buf, i, c;
+    int size = 10;
+    
+   shmid = shmget(5050, sizeof(int) * (size + 4), IPC_CREAT | 0666);
+ 
+    if(shmid == -1){
+       perror("shmget");
+       return 1;
+    }
+    
+    buf = (int*)shmat(shmid, NULL, 0);
+    if(buf == (int*)-1) {
+       perror("shmat");
+       return 1;
+    }
+    
+    if(buf[13] != 1){
+        buf[10] = 0;
+        buf[11] = 0;
+    }
+    buf[12] = 1;
+    
+    while(1){
+       
+       while (((buf[10] + 1) % size) == buf[11]);
+       
+       printf("Enter Data: ");
+       scanf("%d", &num);
+       
+       buf[buf[10]] = num;
+       buf[10] = (buf[10] + 1) % size;
+
+       printf("Enter 1 to continue:");
+       scanf("%d",&c);
+       if(c != 1){
+	  break;
+       }
+    }
+    
+    buf[12] = 0;
+    
+    if(buf[13] == 0){
+       shmdt(buf);
+       shmctl(shmid, IPC_RMID, NULL);
+    } 
+    else{
+       shmdt(buf);
+    }
+    
+    return 0;
+}
+[24bcs059@mepcolinux ex3]$cat pgm1b.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+
+int main() {
+    int shmid, num, *buf, i, c;
+    int size = 10;
+    
+   shmid = shmget(5050, sizeof(int) * (size + 4), IPC_CREAT | 0666);
+ 
+    if(shmid == -1){
+       perror("shmget");
+       return 1;
+    }
+    
+    buf = (int*)shmat(shmid, NULL, 0);
+    if(buf == (int*)-1){
+       perror("shmat");
+       return 1;
+    }
+
+    if(buf[12] != 1){
+       buf[10] = 0;
+       buf[11] = 0;
+    }
+    
+    buf[13] = 1;
+    
+    while(1){
+       while (buf[11] == buf[10]);
+       
+       num = buf[buf[11]];
+       printf("Consumed Data: %d\n", num);
+       
+       buf[11] = (buf[11] + 1) % size;
+       
+       printf("Enter 1 to continue:");
+       scanf("%d",&c);
+       if(c != 1){
+	  break;
+       }
+    }
+    
+    buf[13] = 0;
+    
+    if(buf[12] == 0){
+       shmdt(buf);
+       shmctl(shmid, IPC_RMID, NULL);
+    } 
+    else{
+       shmdt(buf);
+    }
+    
+    return 0;
+}
+[24bcs059@mepcolinux ex3]$./p1a
+Enter Data: 1
+Enter 1 to continue:1
+Enter Data: 34
+Enter 1 to continue:1
+Enter Data: 78
+Enter 1 to continue:1
+Enter Data: 78
+Enter 1 to continue:1
+Enter Data: 5786
+Enter 1 to continue:0
+
+
+
+[24bcs059@mepcolinux ex3]$./p1b
+Consumed Data: 1
+Enter 1 to continue:1
+Consumed Data: 34
+Enter 1 to continue:1
+Consumed Data: 78
+Enter 1 to continue:1
+Consumed Data: 78
+Enter 1 to continue:1
+Consumed Data: 5786
+Enter 1 to continue:0
+[24bcs059@mepcolinux ex3]$cat pgm2a.c
+#include<stdio.h>
+#include<stdlib.h>
+#include<sys/types.h>
+#include<sys/ipc.h>
+#include<sys/shm.h>
+#include<unistd.h>
+#include<sys/wait.h>
+
+int main(){
+   int shmid,num,*buf,i;
+   int size = 10;
+   int in = 0;
+
+   shmid = shmget(2462,sizeof(int)*size,IPC_CREAT|00600);
+
+   if(shmid == -1){
+      perror("shmget");
+      return 1;
+   }
+
+   buf = (int*)shmat(shmid,NULL,0);
+
+   if(buf == (int*)-1){
+      perror("shmat");
+      return 1;
+   }
+   else{
+      for(i = 0; i<size; i++){
+	 printf("Enter Data %d:",i+1);
+	 scanf("%d",&num);
+	 buf[in] = num;
+	 in = (in + 1) % size;
+      }
+   }
+   shmdt(buf);
+   //shmctl(shmid,IPC_RMID,NULL);
+   return 0;
+}
+[24bcs059@mepcolinux ex3]$cat pgm2b.c
+#include<stdio.h>
+#include<stdlib.h>
+#include<sys/types.h>
+#include<sys/ipc.h>
+#include<sys/shm.h>
+#include<unistd.h>
+#include<sys/wait.h>
+
+int main(){
+   int shmid,num,*buf,i;
+   int size = 10;
+   int out = 0;
+
+   shmid = shmget(2462,sizeof(int)*size,IPC_CREAT|00600);
+
+   if(shmid == -1){
+      perror("shmget");
+      return 1;
+   }
+
+   buf = (int*)shmat(shmid,NULL,0);
+
+   if(buf == (int*)-1){
+      perror("shmat");
+      return 0;
+   }
+   else{
+      printf("Consumed Data\n");
+      for(i = 0; i<size; i++){
+	 num = buf[out];
+	 printf("%d ",num);
+	 out = (out + 1) % size;
+      }
+      shmdt(buf);
+      shmctl(shmid,IPC_RMID,NULL);
+      return 0;
+   }
+}
+[24bcs059@mepcolinux ex3]$./p2a
+Enter Data 1:1
+Enter Data 2:2
+Enter Data 3:3
+Enter Data 4:4
+Enter Data 5:5
+Enter Data 6:6
+Enter Data 7:7
+Enter Data 8:8
+Enter Data 9:9
+Enter Data 10:0
+[24bcs059@mepcolinux ex3]$./p2b
+Consumed Data
+1 2 3 4 5 6 7 8 9 0 
+
+[24bcs059@mepcolinux ex3]$cat pgm3.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(){
+   int shmid, *buf;
+   int i, num, size = 10;
+   
+   shmid = shmget(4777, sizeof(int) * size, IPC_CREAT | 0666);
+   
+   if(shmid == -1){
+      perror("shmget");
+      return 1;
+   }
+   
+   buf = (int *)shmat(shmid, NULL, 0);
+   
+   if(buf == (void *)-1){
+      perror("shmat");
+      return 1;
+   }
+   
+   pid_t pid = fork();
+   
+   if(pid < 0){
+      perror("fork");
+      return 1;
+   }
+   
+   if(pid == 0){
+
+      printf("Producer Child Process\n");
+      
+      for(i = 0; i < size; i++){
+	 printf("Enter data %d : ", i + 1);
+	 scanf("%d", &num);
+	 buf[i] = num;
+      }
+      
+      shmdt(buf);
+   }
+   
+   else{
+
+      wait(NULL);
+
+      printf("Consumer Parent Process\n");
+      
+      for(i = 0; i < size; i++){
+	 printf("Data[%d] = %d\n", i + 1, buf[i]);
+      }
+      
+      shmdt(buf);
+      shmctl(shmid, IPC_RMID, NULL);
+
+    }
+
+    return 0;
+}
+
+[24bcs059@mepcolinux ex3]$./p3
+Producer Child Process
+Enter data 1 : 1
+Enter data 2 : 2
+Enter data 3 : 3
+Enter data 4 : 4
+Enter data 5 : 5
+Enter data 6 : 6
+Enter data 7 : 7
+Enter data 8 : 8
+Enter data 9 : 9
+Enter data 10 : 0
+Consumer Parent Process
+Data[1] = 1
+Data[2] = 2
+Data[3] = 3
+Data[4] = 4
+Data[5] = 5
+Data[6] = 6
+Data[7] = 7
+Data[8] = 8
+Data[9] = 9
+Data[10] = 0
+
+[24bcs059@mepcolinux ex3]$exit
+exit
+
+Script done on Wednesday 19 August 2026 04:17:25 PM IST
+[24bcs059@mepcolinux ex3]$
+
